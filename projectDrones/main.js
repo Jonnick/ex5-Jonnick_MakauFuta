@@ -16,3 +16,52 @@ var validationbewegingen = require("./validatebewegingen.js");
 var app = express();
 // automatische json-body parsers van request MET media-type application/json gespecifieerd in de request.
 app.use(parser.json());
+
+// locaties beschikbaar maken
+app.get("/locaties", function(request, response) {
+    //Antwoord met alle instanties van /locaties in json-formaat
+    response.send(dal.AllLocaties());
+});
+
+// opvangen van een GET op /locaties/[drone_naam]
+app.get("/locaties/:id", function(request, response) {
+    var locatie = dal.findLocatie(request.params.id);
+    if (locatie) {
+        response.send(locatie);
+    } else {
+        response.status(404).send();
+    }
+});
+
+// opvangen van POST's op /locaties.
+app.post("/locaties", function(request, response) {
+    // de data in de body wordt toegekend aan onze locatie variabele.
+    // deze is enkel opgevuld indien het JSON is.
+    var locatie = request.body;
+
+    // Valideren dat velden bestaan
+    var errors = validationlocaties.fieldsNotEmpty(locatie, "naam_drone", "mac_address_drone", "naam_locatie", "beschrijving");
+    if (errors) {
+        response.status(400).send({
+            msg: "Volgende velden zijn verplicht of fout: " + errors.concat()
+        });
+        return;
+    }
+
+    // Valideren dat we niet dezelfde locatie 2x hebben
+    var existingLocatie = dal.findLocatie(locatie.naam_drone);
+    if (existingLocatie) {
+        response.status(409).send({
+            msg: "Naam_drone moet uniek zijn!",
+            link: "../locaties/" + existingLocatie.id
+        });
+        return;
+    }
+
+    // De naam van de locatie wordt toegekend als ID
+    locatie.id = locatie.naam_drone;
+    // de locatie toevoegen in onze de lokale opslag 'dal'.
+    dal.saveLocatie(locatie);
+    // de default httpstatus (200) overschrijven met 204 en geen antwoord specifiÃƒÂ«ren.
+    response.status(201).location("../locaties/" + locatie.id).send();
+});
