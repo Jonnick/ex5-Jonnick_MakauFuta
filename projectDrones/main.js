@@ -143,3 +143,9 @@ app.post("/bewegingen", function(request, response) {
     // de default httpstatus (200) overschrijven met 204 en geen antwoord specifiÃƒÂ«ren.
     response.status(201).location("../bewegingen/" + bewegingen.id).send();
 });
+
+// de server starten op poort 4567
+app.listen(4567);
+
+// Bevestiging
+console.log("Server started");
