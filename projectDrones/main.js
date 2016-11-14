@@ -65,3 +65,42 @@ app.post("/locaties", function(request, response) {
     // de default httpstatus (200) overschrijven met 204 en geen antwoord specifiÃƒÂ«ren.
     response.status(201).location("../locaties/" + locatie.id).send();
 });
+
+// opvangen van een GET op /aanwezigheden
+app.get("/aanwezigheden", function(request, response) {
+    //stuurt als antwoord de inhoud van onze database. Standaard in json terug gestuurd.
+    response.send(dal.AllAanwezigheden());
+});
+
+// opvangen van een GET op /aanwezigheden/[UUID]
+app.get("/aanwezigheden/:id", function(request, response) {
+    var locatie = dal.findAanwezighedenPerLocatie(request.params.id);
+    if (locatie) {
+        response.send(locatie);
+    } else {
+        response.status(404).send();
+    }
+});
+
+// POST's op /aanwezigheden opvangen
+app.post("/aanwezigheden", function(request, response) {
+    // de data in de body wordt toegekend aan onze locatie variabele.
+    // deze is enkel opgevuld indien het JSON is.
+    var personen = request.body;
+
+    // Valideren dat velden bestaan
+    var errors = validationaanwezigheden.fieldsNotEmpty(personen, "naam_drone", "aantal", "naam_locatie", "uur");
+    if (errors) {
+        response.status(400).send({
+            msg: "Volgende velden zijn verplicht of fout: " + errors.concat()
+        });
+        return;
+    }
+
+    // een random UUID geven aan ons nieuwe 'persoon'.
+    personen.id = uuid.v4();
+    // de 'persoon' toevoegen in onze 'dal'.
+    dal.saveAanwezighedenPerLocatie(personen);
+    // de default httpstatus (200) overschrijven met 204 en geen antwoord specifiÃƒÂ«ren.
+    response.status(201).location("../aanwezigheden/" + personen.id).send();
+});
